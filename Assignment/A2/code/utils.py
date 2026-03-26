@@ -1,5 +1,6 @@
 # Adapted from https://github.com/Andras7/word2vec-pytorch/blob/master/word2vec/data_reader.py
 
+import re
 import numpy as np
 
 class CorpusReader:
@@ -28,7 +29,10 @@ class CorpusReader:
             if self.lang == "zh":
                 words = list(line.strip())
             elif self.lang == "en":
-                words = line.split()
+                # Remove punctuation attached to words for cleaner vocabulary.
+                # e.g. "good:" -> "good", "thing," -> "thing"
+                # This prevents the vocabulary from being fragmented by punctuation.
+                words = re.findall(r"[a-zA-Z0-9]+", line)
             if len(words) > 0:
                 for word in words:
                     self.token_count += 1
@@ -61,7 +65,7 @@ class CorpusReader:
         self.negatives = np.array(self.negatives)
         np.random.shuffle(self.negatives)
 
-    def getNegatives(self, target, size): 
+    def getNegatives(self, target, size):
         while True:
             response = self.negatives[self.negpos:self.negpos + size]
             self.negpos = (self.negpos + size) % len(self.negatives)
