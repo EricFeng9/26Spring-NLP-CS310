@@ -100,35 +100,141 @@ def train_model_simple(
     """
     ### START YOUR CODE ###
     # Initialize tracking variables
+    import csv
+    import json
+
     train_losses, val_losses, track_tokens_seen = [], [], []
+    eval_records = []
     tokens_seen = 0
     global_step = 0
     start_time = time.time()
-    
-    # TODO: Read the text data from data_path using read_data_from_path()
-    
-    # TODO: Add <|endoftext|> token at the end if not present
-    
-    # TODO: Create training and validation dataloaders using create_dataloaders()
-    
-    # TODO: Print useful information (total batches, vocab size, context length, data size)
-    
-    # TODO: Implement the training loop
-    # For each epoch:
-    #   - Set model to train mode
-    #   - Iterate through train_loader batches
-    #   - For each batch:
-    #     * Zero gradients
-    #     * Calculate loss using calc_loss_batch()
-    #     * Backward pass
-    #     * Optimizer step
-    #     * Update tokens_seen and global_step
-    #     * If global_step % eval_freq == 0: evaluate and record losses
-    #     * If global_step % save_ckpt_freq == 0: save checkpoint
-    
-    # TODO: Handle KeyboardInterrupt to save interrupted checkpoint
-    
-    # TODO: Save final checkpoint
+
+    #读取训练文本
+    text_data = read_data_from_path(data_path)
+
+    # 确保语料末尾有结束符，便于样本边界学习
+    if not text_data.endswith("<|endoftext|>"):
+        text_data = text_data.rstrip() + " <|endoftext|>"
+
+    # 使用模型上下文长度构建 dataloader，stride 取上下文长度减少重叠
+    max_length = model.pos_emb.num_embeddings
+    train_loader, val_loader = create_dataloaders(
+        text_data=text_data,
+        tokenizer=tokenizer,
+        train_ratio=train_ratio,
+        batch_size=batch_size,
+        max_length=max_length,
+        stride=max_length,
+        num_workers=0,
+    )
+
+    #打印关键信息
+    total_batches = len(train_loader)
+    vocab_size = tokenizer.get_vocab_size() if hasattr(tokenizer, "get_vocab_size") else model.tok_emb.num_embeddings
+    print("\n===== Training Data Summary =====")
+    print(f"Data path: {data_path}")
+    print(f"Data size (characters): {len(text_data):,}")
+    print(f"Vocab size: {vocab_size:,}")
+    print(f"Context length: {max_length}")
+    print(f"Train batches/epoch: {len(train_loader):,}")
+    print(f"Validation batches: {len(val_loader):,}")
+    print(f"Train ratio: {train_ratio:.2f}")
+    print("=================================\n")
+
+    #写入运行配置，方便后续报告直接用
+    run_summary = {
+        "data_path": str(data_path),
+        "data_size_characters": len(text_data),
+        "vocab_size": int(vocab_size),
+        "context_length": int(max_length),
+        "batch_size": int(batch_size),
+        "train_ratio": float(train_ratio),
+        "n_epochs": int(n_epochs),
+        "eval_freq": int(eval_freq),
+        "eval_iter": int(eval_iter),
+        "save_ckpt_freq": int(save_ckpt_freq),
+        "total_train_batches_per_epoch": int(total_batches),
+    }
+    with open(output_dir / "run_summary.json", "w", encoding="utf-8") as f:
+        json.dump(run_summary, f, ensure_ascii=False, indent=2)
+
+    #前向、反向、优化，并按步数做评估与存档
+    try:
+        for epoch in range(n_epochs):
+            model.train()
+            for input_batch, target_batch in train_loader:
+                optimizer.zero_grad(set_to_none=True)
+                loss = calc_loss_batch(input_batch, target_batch, model, device)
+                loss.backward()
+                optimizer.step()
+
+                global_step += 1
+                tokens_seen += input_batch.numel()
+
+                if eval_freq > 0 and global_step % eval_freq == 0:
+                    train_loss, val_loss = evaluate_model(
+                        model=model,
+                        train_loader=train_loader,
+                        val_loader=val_loader,
+                        device=device,
+                        eval_iter=eval_iter,
+                    )
+                    train_losses.append(train_loss)
+                    val_losses.append(val_loss)
+                    track_tokens_seen.append(tokens_seen)
+
+                    elapsed = time.time() - start_time
+                    eval_records.append({
+                        "global_step": int(global_step),
+                        "epoch": int(epoch + 1),
+                        "tokens_seen": int(tokens_seen),
+                        "train_loss": float(train_loss),
+                        "val_loss": float(val_loss),
+                        "elapsed_seconds": float(elapsed),
+                    })
+                    print(
+                        f"[eval] step={global_step:,} "
+                        f"tokens={tokens_seen:,} "
+                        f"train_loss={train_loss:.4f} "
+                        f"val_loss={val_loss:.4f}"
+                    )
+
+                if save_ckpt_freq > 0 and global_step % save_ckpt_freq == 0:
+                    ckpt_path = output_dir / f"model_step_{global_step}.pth"
+                    torch.save(model.state_dict(), ckpt_path)
+                    print(f"[ckpt] Saved checkpoint: {ckpt_path}")
+
+    except KeyboardInterrupt:
+        #中断时保存权重，避免训练进度丢失
+        interrupted_ckpt = output_dir / f"model_interrupted_step_{global_step}.pth"
+        torch.save(model.state_dict(), interrupted_ckpt)
+        print(f"\nTraining interrupted. Saved checkpoint to: {interrupted_ckpt}")
+    finally:
+        #将评估记录保存为 CSV 与 JSON，便于作图和报告引用
+        metrics_csv_path = output_dir / "training_metrics.csv"
+        with open(metrics_csv_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=[
+                    "global_step",
+                    "epoch",
+                    "tokens_seen",
+                    "train_loss",
+                    "val_loss",
+                    "elapsed_seconds",
+                ],
+            )
+            writer.writeheader()
+            writer.writerows(eval_records)
+
+        metrics_json_path = output_dir / "training_metrics.json"
+        with open(metrics_json_path, "w", encoding="utf-8") as f:
+            json.dump(eval_records, f, ensure_ascii=False, indent=2)
+
+        # 保存一个结束时 checkpoint，便于恢复训练
+        final_ckpt = output_dir / "model_last_checkpoint.pth"
+        torch.save(model.state_dict(), final_ckpt)
+        print(f"[ckpt] Saved final checkpoint: {final_ckpt}")
     
     ### END YOUR CODE ###
     
@@ -268,9 +374,41 @@ if __name__ == "__main__":
     ### START YOUR CODE ###
     # TODO: Plot losses if train_losses is not empty
     # Hint: Use torch.linspace to create epochs_tensor and call plot_losses()
-    
+    import json
+
+    if train_losses:
+        # 将评估点映射到 epoch 轴，便于可视化训练曲线
+        epochs_tensor = torch.linspace(0, args.n_epochs, len(train_losses))
+        plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
+    else:
+        print("No evaluation records were collected; skipping loss plot.")
+
     # TODO: Save the final model to output_dir / "model_final.pth"
-    
+    final_model_path = output_dir / "model_final.pth"
+    torch.save(model.state_dict(), final_model_path)
+    print(f"Final model saved to: {final_model_path}")
+
+    #保存最终摘要，方便报告直接用
+    final_summary = {
+        "data_file": args.data_file,
+        "tokenizer_path": args.tokenizer,
+        "output_dir": str(output_dir),
+        "n_epochs": int(args.n_epochs),
+        "batch_size": int(args.batch_size),
+        "train_ratio": float(args.train_ratio),
+        "learning_rate": float(args.lr),
+        "eval_freq": int(args.eval_freq),
+        "save_ckpt_freq": int(args.save_ckpt_freq),
+        "vocab_size_arg": int(args.vocab_size),
+        "model_vocab_size": int(GPT_CONFIG_124M["vocab_size"]),
+        "num_eval_points": int(len(train_losses)),
+        "last_train_loss": float(train_losses[-1]) if train_losses else None,
+        "last_val_loss": float(val_losses[-1]) if val_losses else None,
+        "last_tokens_seen": int(tokens_seen[-1]) if tokens_seen else None,
+    }
+    with open(output_dir / "final_summary.json", "w", encoding="utf-8") as f:
+        json.dump(final_summary, f, ensure_ascii=False, indent=2)
+
     ### END YOUR CODE ###
     
     # Print GPU memory usage if CUDA is available
