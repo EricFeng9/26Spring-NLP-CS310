@@ -10,7 +10,11 @@ pip install -r requirement.txt
 
 ## 2. 训练 tokenizer（Requirement 2）
 ```bash
-python train_tokenizer_from_scratch.py
+python train_tokenizer_from_scratch.py \
+  --input ./wiki_zh \
+  --vocab_size 52000 \
+  --pre_tokenizer Whitespace \
+  --output ./wikizh_tokenizer.json
 ```
 
 说明：运行后会在默认输出路径下生成 tokenizer 的 `.json` 文件（如 `wikizh_tokenizer.json`）。
