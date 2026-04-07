@@ -2,3 +2,4 @@ torch>=2.0
 tokenizers>=0.15
 tiktoken>=0.5
 matplotlib>=3.7
+transformers>=4.40

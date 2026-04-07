@@ -1,6 +1,6 @@
-# A3 运行说明（简要）
+# A3 完整运行流程
 
-## 1. 安装依赖
+## 0. 进入目录并安装依赖
 ```bash
 cd /Users/ericfeng/Documents/Sustech/26Spring-NLP/Assignment/A3
 python -m venv .venv
@@ -8,29 +8,71 @@ source .venv/bin/activate
 pip install -r requirement.txt
 ```
 
-## 2. 训练 tokenizer（Requirement 2）
+---
+
+## 1. Requirement 1：预处理 wiki_zh 原始分片
+
+输入是 `wiki_zh` 目录（每行 JSON，含 `title` 与 `text`）。  
+下面命令会生成：
+- `wikizh.txt`：训练 tokenizer / 预训练模型使用的纯文本语料
+- `preprocess_stats.json`：可直接写进报告的统计信息
+
+```bash
+python preprocess_wiki_zh.py \
+  --input ./wiki_zh \
+  --output_text ./wikizh.txt \
+  --output_stats ./preprocess_stats.json
+```
+
+---
+
+## 2. Requirement 2：训练 tokenizer
+
+下面命令会生成：
+- `wikizh_tokenizer_whitespace.json`：训练好的 tokenizer
+- `tokenizer_report.json`：包含词表大小、语料总 token 数等报告信息
+
 ```bash
 python train_tokenizer_from_scratch.py \
-  --input ./wiki_zh \
+  --input ./wikizh.txt \
   --vocab_size 52000 \
   --pre_tokenizer Whitespace \
-  --output ./wikizh_tokenizer.json
+  --min_freq 2 \
+  --output ./wikizh_tokenizer_whitespace.json \
+  --report ./tokenizer_report.json
 ```
 
-说明：运行后会在默认输出路径下生成 tokenizer 的 `.json` 文件（如 `wikizh_tokenizer.json`）。
-
-## 3. 对比 tokenizer（Requirement 2）
+如果你想用 ByteLevel：
 ```bash
-python compare_tokenizers.py
+python train_tokenizer_from_scratch.py \
+  --input ./wikizh.txt \
+  --vocab_size 52000 \
+  --pre_tokenizer ByteLevel \
+  --output ./wikizh_tokenizer_bytelevel.json \
+  --report ./tokenizer_report_bytelevel.json
 ```
 
-说明：把终端输出截图用于报告。
+---
 
-## 4. 运行预训练（Requirement 3/4）
+## 3. Requirement 2：对比分词效果（截图用）
+
+会生成 `compare_tokenizers_result.json`，同时在终端打印结果，方便截图放报告。
+
+```bash
+python compare_tokenizers.py \
+  --tokenizer ./wikizh_tokenizer_whitespace.json \
+  --text "太阳照常升起。" \
+  --output ./compare_tokenizers_result.json
+```
+
+---
+
+## 4. Requirement 3/4：运行预训练
+
 ```bash
 python run_pretrain.py \
-  --data_file ./wiki_zh \
-  --tokenizer ./wikizh_tokenizer.json \
+  --data_file ./wikizh.txt \
+  --tokenizer ./wikizh_tokenizer_whitespace.json \
   --output_dir ./model_checkpoints \
   --n_epochs 1 \
   --batch_size 4 \
@@ -41,24 +83,34 @@ python run_pretrain.py \
   --vocab_size 52000
 ```
 
-如果只是先验证流程是否正确，可加 `--debug` 先跑小模型：
+仅调试流程（小模型）：
 ```bash
 python run_pretrain.py \
-  --data_file ./wiki_zh \
-  --tokenizer ./wikizh_tokenizer.json \
+  --data_file ./wikizh.txt \
+  --tokenizer ./wikizh_tokenizer_whitespace.json \
   --output_dir ./model_checkpoints_debug \
   --debug
 ```
 
-## 5. 训练输出（写报告会用到）
+---
 
-`--output_dir` 目录下会自动生成：
-- `model_final.pth`：最终模型
-- `model_last_checkpoint.pth`：最后一次 checkpoint
-- `model_step_*.pth`：周期保存的 checkpoint
-- `training_metrics.csv`：每次评估的 loss / tokens_seen / step
-- `training_metrics.json`：同上（JSON）
-- `run_summary.json`：数据规模和训练配置
-- `final_summary.json`：最终关键结果摘要
+## 5. 报告可直接使用的输出文件
 
-另外，若有评估记录，会在当前工作目录保存 `loss.pdf`（loss 曲线图）。
+### Requirement 1
+- `preprocess_stats.json`
+
+### Requirement 2
+- `tokenizer_report.json`
+- `compare_tokenizers_result.json`
+- 对比脚本终端截图
+
+### Requirement 3/4（`--output_dir` 下）
+- `model_final.pth`
+- `model_last_checkpoint.pth`
+- `model_step_*.pth`
+- `training_metrics.csv`
+- `training_metrics.json`
+- `run_summary.json`
+- `final_summary.json`
+
+另外：若有评估记录，当前目录会生成 `loss.pdf`（loss 曲线）。
