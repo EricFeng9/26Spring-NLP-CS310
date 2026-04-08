@@ -1,0 +1,10 @@
+{
+  "input_file": "wikizh.txt",
+  "output_tokenizer": "wikizh_tokenizer_whitespace.json",
+  "vocab_size_requested": 52000,
+  "vocab_size_actual": 52000,
+  "pre_tokenizer": "Whitespace",
+  "min_frequency": 2,
+  "total_nonempty_lines": 7424610,
+  "total_tokens_in_corpus": 257656189
+}

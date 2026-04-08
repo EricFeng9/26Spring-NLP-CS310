@@ -42,16 +42,6 @@ python train_tokenizer_from_scratch.py \
   --report ./tokenizer_report.json
 ```
 
-如果你想用 ByteLevel：
-```bash
-python train_tokenizer_from_scratch.py \
-  --input ./wikizh.txt \
-  --vocab_size 52000 \
-  --pre_tokenizer ByteLevel \
-  --output ./wikizh_tokenizer_bytelevel.json \
-  --report ./tokenizer_report_bytelevel.json
-```
-
 ---
 
 ## 3. Requirement 2：对比分词效果（截图用）
@@ -75,7 +65,7 @@ python run_pretrain.py \
   --tokenizer ./wikizh_tokenizer_whitespace.json \
   --output_dir ./model_checkpoints \
   --n_epochs 1 \
-  --batch_size 4 \
+  --batch_size 8 \
   --train_ratio 0.9 \
   --eval_freq 100 \
   --save_ckpt_freq 1000 \

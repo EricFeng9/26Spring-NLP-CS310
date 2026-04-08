@@ -1,0 +1,9 @@
+{
+  "input_path": "wiki_zh",
+  "output_text": "wikizh.txt",
+  "files_processed": 1274,
+  "documents_extracted": 1043224,
+  "invalid_json_lines": 0,
+  "total_characters": 452493892,
+  "add_endoftext": true
+}
