@@ -158,14 +158,43 @@ def train_model_simple(
     with open(output_dir / "run_summary.json", "w", encoding="utf-8") as f:
         json.dump(run_summary, f, ensure_ascii=False, indent=2)
 
+    # 动态学习率调度器参数 (Warmup + Cosine Decay)
+    total_training_steps = n_epochs * total_batches
+    warmup_steps = max(1, int(0.05 * total_training_steps)) # 前 5% 步数用于 Warmup
+    max_lr = optimizer.param_groups[0]['lr'] # 从 optimizer 中取出初始设定的 lr 作为全局 max_lr
+    min_lr = max_lr * 0.1 # 余弦退火的下界设为 1/10
+    
+    import math
+    def get_lr(it):
+        # 1) 线性 Warmup
+        if it < warmup_steps:
+            return max_lr * (it + 1) / warmup_steps
+        # 2) 超过总步数则保持最低学习率
+        if it > total_training_steps:
+            return min_lr
+        # 3) 余弦退火 (Cosine Decay)
+        decay_ratio = (it - warmup_steps) / (total_training_steps - warmup_steps)
+        coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
+        return min_lr + coeff * (max_lr - min_lr)
+
     #前向、反向、优化，并按步数做评估与存档
     try:
         for epoch in range(n_epochs):
             model.train()
             for input_batch, target_batch in train_loader:
+                
+                # 更新当前步的学习率
+                current_lr = get_lr(global_step)
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = current_lr
+                    
                 optimizer.zero_grad(set_to_none=True)
                 loss = calc_loss_batch(input_batch, target_batch, model, device)
                 loss.backward()
+                
+                # 加入梯度裁剪防爆 (Gradient Clipping)，标准技巧
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                
                 optimizer.step()
 
                 global_step += 1
@@ -192,11 +221,14 @@ def train_model_simple(
                         "val_loss": float(val_loss),
                         "elapsed_seconds": float(elapsed),
                     })
+                    # 取出当前 LR 用于打印观察
+                    current_log_lr = optimizer.param_groups[0]['lr']
                     print(
                         f"[eval] step={global_step:,} "
                         f"tokens={tokens_seen:,} "
                         f"train_loss={train_loss:.4f} "
-                        f"val_loss={val_loss:.4f}"
+                        f"val_loss={val_loss:.4f} "
+                        f"lr={current_log_lr:.6f}"
                     )
 
                 if save_ckpt_freq > 0 and global_step % save_ckpt_freq == 0:
