@@ -1,1 +1,14 @@
 Assignment/A3/wiki_zh_2019.zip
+Assignment/A3/wikizh.txt
+
+# Ignore model checkpoints directory
+Assignment/A3/model_checkpoints/
+# But keep these specific files
+!Assignment/A3/model_checkpoints/run_summary.json
+!Assignment/A3/model_checkpoints/training_metrics.csv
+!Assignment/A3/model_checkpoints/training_metrics.json
+!Assignment/A3/model_checkpoints/final_summary.json
+
+# Ignore large local model artifacts
+Lab/week8/models/Qwen3-0.6B/model.safetensors
+Lab/week8/models/Qwen3-0.6B/tokenizer.json
