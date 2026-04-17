@@ -17,7 +17,7 @@ def train_tokenizer(
     if not input_file.exists() or not input_file.is_file():
         raise FileNotFoundError(f"--input must be a text file, got: {input_file}")
 
-    tokenizer = Tokenizer(models.BPE(unk_token="<|endoftext|>"))
+    tokenizer = Tokenizer(models.BPE(unk_token="<|unk|>"))
     if pre_tokenizer_name == "Whitespace":
         tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
     else:
@@ -25,7 +25,7 @@ def train_tokenizer(
 
     trainer = trainers.BpeTrainer(
         vocab_size=vocab_size,
-        special_tokens=["<|endoftext|>"],
+        special_tokens=["<|unk|>", "<|endoftext|>"],
         min_frequency=min_freq,
     )
 

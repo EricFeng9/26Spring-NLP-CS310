@@ -1,2 +1,9 @@
 /model_checkpoints
 ./wikizh.txt
+
+# Keep only training summaries/metrics for the final ByteLevel run
+/model_checkpoints_seed10086_wd001_bytelevel/*
+!/model_checkpoints_seed10086_wd001_bytelevel/final_summary.json
+!/model_checkpoints_seed10086_wd001_bytelevel/run_summary.json
+!/model_checkpoints_seed10086_wd001_bytelevel/training_metrics.csv
+!/model_checkpoints_seed10086_wd001_bytelevel/training_metrics.json

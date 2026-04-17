@@ -29,17 +29,17 @@ python preprocess_wiki_zh.py \
 ## 2. Requirement 2：训练 tokenizer
 
 下面命令会生成：
-- `wikizh_tokenizer_whitespace.json`：训练好的 tokenizer
-- `tokenizer_report.json`：包含词表大小、语料总 token 数等报告信息
+- `wikizh_tokenizer_bytelevel.json`：训练好的 tokenizer
+- `tokenizer_report_bytelevel.json`：包含词表大小、语料总 token 数等报告信息
 
 ```bash
 python train_tokenizer_from_scratch.py \
   --input ./wikizh.txt \
   --vocab_size 52000 \
-  --pre_tokenizer Whitespace \
+  --pre_tokenizer ByteLevel \
   --min_freq 2 \
-  --output ./wikizh_tokenizer_whitespace.json \
-  --report ./tokenizer_report.json
+  --output ./wikizh_tokenizer_bytelevel.json \
+  --report ./tokenizer_report_bytelevel.json
 ```
 
 ---
@@ -50,9 +50,9 @@ python train_tokenizer_from_scratch.py \
 
 ```bash
 python compare_tokenizers.py \
-  --tokenizer ./wikizh_tokenizer_whitespace.json \
+  --tokenizer ./wikizh_tokenizer_bytelevel.json \
   --text "太阳照常升起。" \
-  --output ./compare_tokenizers_result.json
+  --output ./compare_tokenizers_result_bytelevel.json
 ```
 
 ---
@@ -60,16 +60,19 @@ python compare_tokenizers.py \
 ## 4. Requirement 3/4：运行预训练
 
 ```bash
-python run_pretrain.py \
+CUDA_VISIBLE_DEVICES=1 python run_pretrain.py \
   --data_file ./wikizh.txt \
-  --tokenizer ./wikizh_tokenizer_whitespace.json \
-  --output_dir ./model_checkpoints \
+  --tokenizer ./wikizh_tokenizer_bytelevel.json \
+  --output_dir ./model_checkpoints_seed10086_wd001_bytelevel \
   --n_epochs 1 \
   --batch_size 8 \
   --train_ratio 0.9 \
   --eval_freq 100 \
+  --eval_iter 10 \
   --save_ckpt_freq 1000 \
   --lr 1e-4 \
+  --weight_decay 0.01 \
+  --seed 10086 \
   --vocab_size 52000
 ```
 
@@ -77,7 +80,7 @@ python run_pretrain.py \
 ```bash
 python run_pretrain.py \
   --data_file ./wikizh.txt \
-  --tokenizer ./wikizh_tokenizer_whitespace.json \
+  --tokenizer ./wikizh_tokenizer_bytelevel.json \
   --output_dir ./model_checkpoints_debug \
   --debug
 ```
@@ -90,8 +93,8 @@ python run_pretrain.py \
 - `preprocess_stats.json`
 
 ### Requirement 2
-- `tokenizer_report.json`
-- `compare_tokenizers_result.json`
+- `tokenizer_report_bytelevel.json`
+- `compare_tokenizers_result_bytelevel.json`
 - 对比脚本终端截图
 
 ### Requirement 3/4（`--output_dir` 下）

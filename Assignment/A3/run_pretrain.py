@@ -307,6 +307,12 @@ if __name__ == "__main__":
         help="Frequency of evaluations during training (in steps)",
     )
     parser.add_argument(
+        "--eval_iter",
+        type=int,
+        default=10,
+        help="Number of batches used to estimate train/val loss at each evaluation point",
+    )
+    parser.add_argument(
         "--save_ckpt_freq",
         type=int,
         default=100_000,
@@ -314,6 +320,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--lr", type=float, default=1e-4, help="Learning rate for the optimizer"
+    )
+    parser.add_argument(
+        "--weight_decay", type=float, default=0.05, help="Weight decay for AdamW optimizer"
+    )
+    parser.add_argument(
+        "--seed", type=int, default=3407, help="Random seed"
     )
     parser.add_argument(
         "--batch_size", type=int, default=4, help="Batch size for training"
@@ -370,7 +382,9 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
     
     # Initialize model
-    torch.manual_seed(123)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
     model = GPTModel(GPT_CONFIG_124M)
     model.to(device)
     
@@ -379,7 +393,11 @@ if __name__ == "__main__":
     print(f"Total model parameters: {total_params:,} ({total_params / 1e6:.2f}M)")
     
     # Setup optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.1)
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=args.lr,
+        weight_decay=args.weight_decay,
+    )
 
     # Create output directory
     output_dir = Path(args.output_dir)
@@ -394,7 +412,7 @@ if __name__ == "__main__":
         device=device,
         n_epochs=args.n_epochs,
         eval_freq=args.eval_freq,
-        eval_iter=1,
+        eval_iter=args.eval_iter,
         output_dir=output_dir,
         save_ckpt_freq=args.save_ckpt_freq,
         tokenizer=tokenizer,
@@ -429,6 +447,8 @@ if __name__ == "__main__":
         "batch_size": int(args.batch_size),
         "train_ratio": float(args.train_ratio),
         "learning_rate": float(args.lr),
+        "weight_decay": float(args.weight_decay),
+        "seed": int(args.seed),
         "eval_freq": int(args.eval_freq),
         "save_ckpt_freq": int(args.save_ckpt_freq),
         "vocab_size_arg": int(args.vocab_size),

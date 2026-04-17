@@ -1,19 +1,19 @@
 {
   "text": "太阳照常升起。",
-  "custom_tokenizer_path": "wikizh_tokenizer_whitespace.json",
+  "custom_tokenizer_path": "wikizh_tokenizer_bytelevel.json",
   "custom_token_ids": [
-    20590,
-    10687,
-    7459,
-    46115,
-    3484
+    24931,
+    1405,
+    646,
+    30316,
+    216
   ],
   "custom_pieces": [
-    "太阳",
-    "照",
-    "常",
-    "升起",
-    "。"
+    "Ġå¤ªéĺ³",
+    "çħ§",
+    "å¸¸",
+    "åįĩèµ·",
+    "ãĢĤ"
   ],
   "gpt2_token_ids": [
     13783,
