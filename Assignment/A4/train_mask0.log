@@ -1,0 +1,6 @@
+Data loaded.
+Pretrained model loaded.
+Epoch 1/2 | train_loss=0.8151 | val_loss=0.6430
+Epoch 2/2 | train_loss=0.4472 | val_loss=0.6191
+Model saved to sft_model_355M_mask0.pth
+Loss plot saved to sft_model_355M_mask0_loss.pdf
