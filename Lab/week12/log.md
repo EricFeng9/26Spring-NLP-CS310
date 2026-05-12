@@ -22,6 +22,7 @@ export MODEL_QWEN25=/data/student/Fengjunming/Temp/26Spring-NLP-CS310/Lab/week12
 \\nothink"`
 
 - 回答: 4
+-正确答案:
 
 ### 1.1.2
 `./llama.cpp/build/bin/llama-cli -m "$MODEL_GGUF" -p "请只输出最终答案，不要解释。
@@ -30,6 +31,7 @@ export MODEL_QWEN25=/data/student/Fengjunming/Temp/26Spring-NLP-CS310/Lab/week12
 \nothink"`
 
 - 回答:17鸡，18兔
+-正确答案:
 
 ### 1.1.3
 `./llama.cpp/build/bin/llama-cli -m "$MODEL_GGUF" -p "请只输出最终答案，不要解释。
@@ -38,6 +40,7 @@ export MODEL_QWEN25=/data/student/Fengjunming/Temp/26Spring-NLP-CS310/Lab/week12
 \nothink"`
 
 - 回答:2423423443
+-正确答案:
 
 ### 1.1.4
 `./llama.cpp/build/bin/llama-cli -m "$MODEL_GGUF" -p "请只输出最终答案，不要解释。
@@ -46,6 +49,7 @@ export MODEL_QWEN25=/data/student/Fengjunming/Temp/26Spring-NLP-CS310/Lab/week12
 \nothink"`
 
 - 回答: 3块钱
+-正确答案:
 
 ## 1.2  few-shot 
 
@@ -65,6 +69,7 @@ export MODEL_QWEN25=/data/student/Fengjunming/Temp/26Spring-NLP-CS310/Lab/week12
 \nothink`
 
 - 回答: 4
+-正确答案:
 
 ### 1.2.2
 `请根据示例作答，只输出最终答案，不要解释。
@@ -82,6 +87,7 @@ export MODEL_QWEN25=/data/student/Fengjunming/Temp/26Spring-NLP-CS310/Lab/week12
 \nothink`
 
 - 回答:
+-正确答案:
 
 ### 1.2.3
 `请根据示例作答，只输出最终答案，不要解释。
@@ -99,6 +105,7 @@ export MODEL_QWEN25=/data/student/Fengjunming/Temp/26Spring-NLP-CS310/Lab/week12
 \nothink `
 
 - 回答:2423423443
+-正确答案:
 
 ### 1.2.4
 `请根据示例作答，只输出最终答案，不要解释。
@@ -116,3 +123,4 @@ export MODEL_QWEN25=/data/student/Fengjunming/Temp/26Spring-NLP-CS310/Lab/week12
 \nothink `
 
 - 回答: 3
+-正确答案:
