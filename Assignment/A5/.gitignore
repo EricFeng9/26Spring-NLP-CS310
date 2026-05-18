@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+
+*.zip
+
+/gpt2-355M-sft.pth
+/a5_dpo_code/gpt2-medium355M-dpo.pth
+/reference_outputs.json
+
+# 本地临时标记文件。
+/gpt
